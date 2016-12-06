@@ -28,7 +28,7 @@ function httpGet(url) {
 }
 
 function createUrl(city) {
-    let appid = 'e917db498668458f5559e2b5c819dbf8';
+    const appid = 'e917db498668458f5559e2b5c819dbf8';
     let url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${appid}`;
     return url;
 }
@@ -38,16 +38,34 @@ function getCelciusTempetature(temperature) {
     return celcTemperature;
 }
 
-function createLiTemplate({city, country, temperature, weather}) {
+function createLiTemplate(dataWeather) {
+    let { name: city, sys: { country }, main: { temp: temperature }, weather: [weather] } = dataWeather;
     let temperatureCelcius = getCelciusTempetature(temperature);
     let liElement = document.createElement('li');
     liElement.className = 'weater-city-item';
     let innerLiText = `<span class="city-name">${city}</span>,
                       <span class="city-country"> ${country}</span>,
                       <span class="city-temperature"> ${temperatureCelcius}&deg; С</span>,
-                      <span class="city-weater">${weather}</span>`;
+                      <span class="city-weater">${weather.description}</span>`;
     liElement.innerHTML = innerLiText;
     return liElement;
+}
+
+
+function getWeatherWithPromise(city) {
+    let cityWeatherUrl = createUrl(city);
+    httpGet(cityWeatherUrl).then(data => {
+        let liItem = createLiTemplate(data);
+        listOfCities.appendChild(liItem);
+    });
+}
+
+function getWeatherWithFetch(city) {
+    let cityWeatherUrl = createUrl(city);
+    fetch(cityWeatherUrl).then(data => data.json()).then(data => {
+        let liItem = createLiTemplate(data);
+        listOfCities.appendChild(liItem);
+    });
 }
 
 function init() {
@@ -59,26 +77,13 @@ function init() {
     searchCityButton.addEventListener('click', function() {
         let cityName = inputCityField.value;
 
-        getWeather(cityName);
+        getWeatherWithPromise(cityName);
+        getWeatherWithFetch(cityName);
     });
 
     clearAllCityButton.addEventListener('click', function() {
         listOfCities.innerHTML = '';
     });
-}
-
-function getWeather(city) {
-    let cityWeatherUrl = createUrl(city);
-    httpGet(cityWeatherUrl).then(data => {
-        let configurateObject = {
-            city: data.name,
-            country: data.sys.country,
-            temperature: data.main.temp,
-            weather: data.weather[0].description
-        };
-        let liItem = createLiTemplate(configurateObject);
-        listOfCities.appendChild(liItem);
-    })
 }
 
 init();
